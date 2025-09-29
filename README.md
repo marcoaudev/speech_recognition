@@ -8,21 +8,14 @@ Built with the tools and technologies:
 
 ---
 
-## Table of Contents
-- [Overview](#overview)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Project Setup](#project-setup)
-  - [Usage](#usage)
-  - [Testing](#testing)
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/username/speech_recognition.git
 
----
+## ⚠️ Important Setup Requirement
 
-## Overview
-
-`speech_recognition` is a versatile developer tool that facilitates speech-to-text conversion for Brazilian Portuguese commands using advanced Wav2Vec2 models.  
-It supports real-time voice interaction, model deployment, and hardware optimization, making it ideal for voice-controlled applications.  
+Before anything else, you **must create a folder named `temp` in the root of the project**.  
+This folder will be used to save the audio files captured during execution.
 
 ### Why speech_recognition?
 This project streamlines the integration of speech recognition into your system. The core features include:
@@ -36,20 +29,3 @@ This project streamlines the integration of speech recognition into your system.
 ---
 
 ## Getting Started
-
-### Prerequisites
-
-This project requires the following dependencies:
-
-- Programming Language: **Python**  
-- Package Manager: **Pip**  
-
----
-
-### Installation
-
-Build speech_recognition from the source and install dependencies:
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/username/speech_recognition.git
