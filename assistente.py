@@ -1,3 +1,4 @@
+from nltk import word_tokenize, corpus
 from inicializador_modelo import *
 from transcritor import *
 import secrets
@@ -5,13 +6,16 @@ import pyaudio
 import wave
 import os
 
+LINGUAGEM = "portuguese"
 
 def iniciar(dispositivo):
           modelo_iniciado, processador, modelo = iniciar_modelo(MODELOS[0], dispositivo)
           
           gravador = pyaudio.PyAudio()
-          
-          return modelo_iniciado, processador, modelo, gravador
+
+          palavras_de_parada = set(corpus.stopwords.words(LINGUAGEM))
+
+          return modelo_iniciado, processador, modelo, gravador, palavras_de_parada
 
 FORMATO = pyaudio.paInt16
 CANAIS = 1
