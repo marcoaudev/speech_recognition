@@ -1,9 +1,11 @@
+
 from nltk import word_tokenize, corpus
 from inicializador_modelo import *
 from transcritor import *
 import secrets
 import pyaudio
 import wave
+import json
 import os
 
 LINGUAGEM = "portuguese"
@@ -12,6 +14,7 @@ CANAIS = 1
 AMOSTRAS = 1024
 TEMPO_GRAVACAO = 5
 CAMINHO_AUDIO_FALAS = "C:\\Users\\marco\\Desktop\\assistente_virtual\\temp"
+CONFIGURACOES = "C:\\Users\\marco\\Desktop\\assistente_virtual\\config.json"
 
 def iniciar(dispositivo):
           modelo_iniciado, processador, modelo = iniciar_modelo(MODELOS[0], dispositivo)
@@ -19,8 +22,13 @@ def iniciar(dispositivo):
           gravador = pyaudio.PyAudio()
 
           palavras_de_parada = set(corpus.stopwords.words(LINGUAGEM))
+          
+          with open(CONFIGURACOES, 'r', encoding='utf-8') as arquivo_configuracoes:
+                    configuracoes = json.load(arquivo_configuracoes)
+                    acoes = configuracoes["acoes"]
+                    arquivo_configuracoes.close()
 
-          return modelo_iniciado, processador, modelo, gravador, palavras_de_parada
+          return modelo_iniciado, processador, modelo, gravador, palavras_de_parada, acoes
 
 
 
