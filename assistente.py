@@ -74,10 +74,25 @@ def processar_transcricao(transcricao, palavras_de_parada):
 
           return comando
 
+def validar_comando(comando, acoes):
+          valido, acao, dispositivo = False, None, None
+          
+          if len(comando) >= 2:
+                    acao = comando[0]
+                    dispositivo = comando[1]
+                    
+                    for acao_prevista in acoes:
+                              if acao == acao_prevista["nome"]:
+                                        if dispositivo in acao_prevista["dispositivos"]:
+                                                  valido = True
+                                                  break
+          
+          return valido, acao, dispositivo
+
 if __name__ == "__main__":
           dispositivo = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-          iniciado, processador, modelo, gravador, palavras_de_parada = iniciar(dispositivo)
+          iniciado, processador, modelo, gravador, palavras_de_parada, acoes = iniciar(dispositivo)
 
           if iniciado:
                     while True:
@@ -93,8 +108,13 @@ if __name__ == "__main__":
                                                   os.remove(arquivo) 
                                                   # Apaga o arquivo temporário após a transcrição
                                         comando = processar_transcricao(transcricao, palavras_de_parada)
-                                        print(f"Comando: {comando}")  
+                                        print(f"Comando: {comando}") 
                                         
+                                        valido, acao, dispositivo_alvo = validar_comando(comando, acoes)  
+                                        if valido:
+                                                  print(f"Comando válido: {acao} no {dispositivo_alvo}")
+                                        else:
+                                                  print("Comando inválido ou não reconhecido.")
                               else:
                                         print("Ocorreu um erro ao gravar o áudio")
           else:
