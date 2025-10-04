@@ -76,10 +76,17 @@ if __name__ == "__main__":
                               fala = capturar_fala(gravador)
                               gravado, arquivo = gravar_fala(gravador, fala)
                               if gravado:
+                    
                                         fala = carregar_fala(arquivo)
+                                        
                                         transcricao = transcrever_fala(dispositivo, fala, modelo, processador)
-
-                                        print(f"Transcrição: {transcricao}")
+                                        
+                                        if os.path.exists(arquivo):
+                                                  os.remove(arquivo) 
+                                                  # Apaga o arquivo temporário após a transcrição
+                                        comando = processar_transcricao(transcricao, palavras_de_parada)
+                                        print(f"Comando: {comando}")  
+                                        
                               else:
                                         print("Ocorreu um erro ao gravar o áudio")
           else:
