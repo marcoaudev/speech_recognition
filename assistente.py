@@ -7,6 +7,11 @@ import wave
 import os
 
 LINGUAGEM = "portuguese"
+FORMATO = pyaudio.paInt16
+CANAIS = 1
+AMOSTRAS = 1024
+TEMPO_GRAVACAO = 5
+CAMINHO_AUDIO_FALAS = "C:\\Users\\marco\\Desktop\\assistente_virtual\\temp"
 
 def iniciar(dispositivo):
           modelo_iniciado, processador, modelo = iniciar_modelo(MODELOS[0], dispositivo)
@@ -17,10 +22,6 @@ def iniciar(dispositivo):
 
           return modelo_iniciado, processador, modelo, gravador, palavras_de_parada
 
-FORMATO = pyaudio.paInt16
-CANAIS = 1
-AMOSTRAS = 1024
-TEMPO_GRAVACAO = 5
 
 
 def capturar_fala(gravador):
@@ -37,7 +38,7 @@ def capturar_fala(gravador):
           print("Gravação encerrada.")
           return fala
 
-CAMINHO_AUDIO_FALAS = "C:\\Users\\marco\\Desktop\\assistente_virtual\\temp"
+
 
 def gravar_fala(gravador, fala):
           gravado, arquivo = False, f"{CAMINHO_AUDIO_FALAS}\\fala_{secrets.token_hex(32).lower()}.wav"
