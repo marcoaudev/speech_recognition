@@ -55,6 +55,16 @@ def gravar_fala(gravador, fala):
                     print(f"erro ao gravar o áudio: {str(e)}")
           return gravado, arquivo
 
+def processar_transcricao(transcricao, palavras_de_parada):
+          comando = []
+          
+          tokens = word_tokenize(transcricao)
+
+          for token in tokens:
+                    if token not in palavras_de_parada:
+                              comando.append(token)
+
+          return comando
 
 if __name__ == "__main__":
           dispositivo = "cuda:0" if torch.cuda.is_available() else "cpu"
