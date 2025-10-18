@@ -1,12 +1,16 @@
-
+from flask import Flask, Response, request, send_from_directory
 from nltk import word_tokenize, corpus
 from inicializador_modelo import *
 from transcritor import *
+from threading import Thread
 import secrets
 import pyaudio
 import wave
 import json
 import os
+
+from lampada import *
+from som import *
 
 LINGUAGEM = "portuguese"
 FORMATO = pyaudio.paInt16
@@ -15,6 +19,10 @@ AMOSTRAS = 1024
 TEMPO_GRAVACAO = 5
 CAMINHO_AUDIO_FALAS = "C:\\Users\\marco\\Desktop\\assistente_virtual\\temp"
 CONFIGURACOES = "C:\\Users\\marco\\Desktop\\assistente_virtual\\config.json"
+
+MODO_LINHA_COMANDO = 1
+MODO_WEB = 2
+MODO_DE_FUNCIONAMENTO = MODO_WEB
 
 def iniciar(dispositivo):
           modelo_iniciado, processador, modelo = iniciar_modelo(MODELOS[0], dispositivo)
@@ -29,6 +37,23 @@ def iniciar(dispositivo):
                     arquivo_configuracoes.close()
 
           return modelo_iniciado, processador, modelo, gravador, palavras_de_parada, acoes
+
+def iniciar_atuadores():
+          atuadores = []
+          
+          if iniciar_lampada():
+                    atuadores.append({
+                              "nome": "lâmpada",
+                              "atuacao": atuar_sobre_lampada
+                    })
+                    
+          if iniciar_som():
+                    atuadores.append({
+                              "nome": "sistema de som",
+                              "atuacao": atuar_sobre_som
+                    })
+                    
+          return atuadores
 
 
 
@@ -89,33 +114,104 @@ def validar_comando(comando, acoes):
           
           return valido, acao, dispositivo
 
+def atuar(acao, dispositivo, atuadores):
+          for atuador in atuadores: 
+                    print(f"enviando comando para {atuador['nome']}")
+                    atuacao = Thread(target=atuador['atuacao'], args=[acao, dispositivo])
+                    atuacao.start()
+                    
+
+
+def ativar_linha_de_comando():
+          while True:
+                    fala = capturar_fala(gravador)
+                    gravado, arquivo = gravar_fala(gravador, fala)
+                    if gravado:
+                    
+                              fala = carregar_fala(arquivo)
+                                        
+                              transcricao = transcrever_fala(dispositivo, fala, modelo, processador)
+                                        
+                              if os.path.exists(arquivo):
+                                        os.remove(arquivo) 
+                                                  # Apaga o arquivo temporário após a transcrição
+                              comando = processar_transcricao(transcricao, palavras_de_parada)
+                              print(f"Comando: {comando}") 
+                                        
+                              valido, acao, dispositivo_alvo = validar_comando(comando, acoes)  
+                              if valido:
+                                        print(f"Comando válido: {acao} no {dispositivo_alvo}")
+                                        atuar(acao, dispositivo_alvo, atuadores)
+                              else:
+                                        print("Comando inválido ou não reconhecido.")
+                    else:
+                              print("Ocorreu um erro ao gravar o áudio")
+                              
+                              
+############################ SERVIÇO WEB ###########################################       
+servico = Flask("assistente", static_folder="public")
+
+@servico.get("/")
+def acessar_pagina():
+          return send_from_directory("public", "index.html")
+
+@servico.get("/<path:caminho>")
+def acessar_pasta_estatica(caminho):
+          return send_from_directory("public", caminho)
+
+@servico.post("/reconhecer_comando")
+def reconhecer_comando():
+          if "audio" not in request.files:
+                    return Response(status=400)
+          audio = request.files["audio"]
+          caminho_arquivo = os.path.join(servico.config['caminho_audio_falas'],f"{secrets.token_hex(32).lower()}.wav")
+          audio.save(caminho_arquivo)
+          
+          try:
+                    trasncricao = transcrever_fala(servico.config['dispositivo'], carregar_fala(caminho_arquivo), servico.config['modelo'], servico.config['processador'])
+                    comando = processar_transcricao(transcricao, servico.config['palavras_de_parada'])
+                    valido, acao, dispositivo_alvo = validar_comando(comando, servico.config["acoes"])
+                    
+                    if valido:
+                              print(f"Comando válido, executar atuação")
+                              return Response(status=200)
+                              
+                    atuar(acao, dispositivo_alvo, servico.config['atuadores'])
+                    
+          except Exception as e:
+                    print(f"erro ao processar fala: {str(e)}")
+                    
+                    return Response(status=500)
+          finally:
+                    if os.path.exists(caminho_arquivo):
+                              os.remove(caminho_arquivo)    
+                                
+#############################################################################################     
+
+
+def ativar_web(dispositivo, modelo, processador, palavras_de_parada, acoes, atuadores):
+          servico.config["dispositivo"] = dispositivo
+          servico.config["modelo"] = modelo
+          servico.config["processador"] = processador
+          servico.config["palavras_de_parada"] = palavras_de_parada
+          servico.config["acoes"] = acoes
+          servico.config["atuadores"] = atuadores
+          
+          servico.run(port=7100)
+          
 if __name__ == "__main__":
           dispositivo = "cuda:0" if torch.cuda.is_available() else "cpu"
 
           iniciado, processador, modelo, gravador, palavras_de_parada, acoes = iniciar(dispositivo)
 
           if iniciado:
-                    while True:
-                              fala = capturar_fala(gravador)
-                              gravado, arquivo = gravar_fala(gravador, fala)
-                              if gravado:
                     
-                                        fala = carregar_fala(arquivo)
-                                        
-                                        transcricao = transcrever_fala(dispositivo, fala, modelo, processador)
-                                        
-                                        if os.path.exists(arquivo):
-                                                  os.remove(arquivo) 
-                                                  # Apaga o arquivo temporário após a transcrição
-                                        comando = processar_transcricao(transcricao, palavras_de_parada)
-                                        print(f"Comando: {comando}") 
-                                        
-                                        valido, acao, dispositivo_alvo = validar_comando(comando, acoes)  
-                                        if valido:
-                                                  print(f"Comando válido: {acao} no {dispositivo_alvo}")
-                                        else:
-                                                  print("Comando inválido ou não reconhecido.")
-                              else:
-                                        print("Ocorreu um erro ao gravar o áudio")
+                    atuadores = iniciar_atuadores()
+                    if MODO_DE_FUNCIONAMENTO == MODO_LINHA_COMANDO:
+                              ativar_linha_de_comando()
+                    elif MODO_DE_FUNCIONAMENTO == MODO_WEB:
+                              ativar_web(dispositivo, modelo, processador, palavras_de_parada, acoes, atuadores)
+                    else: 
+                              print("Modo de funcionamento não implementado")
           else:
                     print("Ocorreu um erro de inicialização")
