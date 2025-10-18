@@ -164,7 +164,8 @@ def reconhecer_comando():
           if "audio" not in request.files:
                     return Response(status=400)
           audio = request.files["audio"]
-          caminho_arquivo = os.path.join(servico.config['caminho_audio_falas'],f"{secrets.token_hex(32).lower()}.wav")
+          
+          caminho_arquivo = f"{CAMINHO_AUDIO_FALAS}\\fala_{secrets.token_hex(32).lower()}.wav"
           audio.save(caminho_arquivo)
           
           try:
@@ -174,9 +175,12 @@ def reconhecer_comando():
                     
                     if valido:
                               print(f"Comando válido, executar atuação")
-                              return Response(status=200)
+                              atuar(acao, dispositivo_alvo, servico.config['atuadores'])
+                              return Response(json.dumps({"transquição": transcricao}), status=200)
+                    else:
+                              return Response(json.dumps({"transquição": "Comando não reconhecido"}), status=200)
                               
-                    atuar(acao, dispositivo_alvo, servico.config['atuadores'])
+                   
                     
           except Exception as e:
                     print(f"erro ao processar fala: {str(e)}")
